@@ -1,0 +1,4 @@
+---
+- include_tasks: check_process.yml
+
+- include_tasks: check_cluster.yml

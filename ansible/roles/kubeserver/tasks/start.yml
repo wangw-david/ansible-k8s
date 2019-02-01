@@ -1,0 +1,19 @@
+---
+- include_tasks: install_systemd.yml
+
+- include_tasks: check_process.yml
+
+- include_tasks: start_apiserver.yml
+
+- include_tasks: start_kube_controller_manager.yml
+
+- include_tasks: start_kube_scheduler.yml
+
+- name: Check the kube component statuses
+  shell: kubectl get componentstatuses
+  register: componentstatuses
+  run_once: true
+  changed_when: no
+  delegate_to: localhost
+
+- debug: var=componentstatuses.stdout_lines

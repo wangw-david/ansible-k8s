@@ -1,0 +1,32 @@
+---
+- name: Sets a cluster entry in kubeconfig
+  command: kubectl config set-cluster kubernetes
+    --certificate-authority={{ kubelet_cert_config_path }}/ca.crt
+    --embed-certs=true
+    --server={{ k8s_api_server_https_url }}
+    --kubeconfig={{ kubelet_config_path }}/kubelet.kubeconfig
+  become: true
+
+- name: Sets a user entry in kubeconfig
+  command: kubectl config set-credentials system:node:{{ inventory_hostname }}
+    --client-certificate={{ kubelet_cert_config_path }}/apiserver-kubelet-client.crt
+    --embed-certs=true
+    --client-key={{ kubelet_cert_config_path }}/apiserver-kubelet-client.key
+    --kubeconfig={{ kubelet_config_path }}/kubelet.kubeconfig
+  become: true
+
+- name: Sets a context entry in kubeconfig
+  command: kubectl config set-context system:node:{{ inventory_hostname }}@kubernetes
+    --cluster=kubernetes
+    --user=system:node:{{ inventory_hostname }}
+    --kubeconfig={{ kubelet_config_path }}/kubelet.kubeconfig
+  become: true
+
+- name: Set default context
+  command: kubectl config use-context system:node:{{ inventory_hostname }}@kubernetes
+    --kubeconfig={{ kubelet_config_path }}/kubelet.kubeconfig
+  become: true
+
+- name: Close swap
+  shell: swapoff -a
+  become: true

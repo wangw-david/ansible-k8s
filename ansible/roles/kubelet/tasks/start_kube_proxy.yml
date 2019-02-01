@@ -1,0 +1,37 @@
+---
+- name: Copying over kube-proxy.service for services
+  template:
+    src: "kube-proxy.service.j2"
+    dest: "/usr/lib/systemd/system/kube-proxy.service"
+    mode: "0644"
+  become: true
+  register: copy_proxy_system
+
+- name: Copying over config for kube-proxy
+  template:
+    src: "kube-proxy.conf.j2"
+    dest: "{{ kubelet_config_path }}/kube-proxy.conf"
+    mode: "0644"
+  become: true
+  register: copy_proxy_config
+
+- name: Copying over yaml for kube-proxy
+  template:
+    src: "kube-proxy-config.yaml.j2"
+    dest: "{{ kubelet_config_path }}/kube-proxy-config.yaml"
+    mode: "0644"
+  become: true
+  register: copy_proxy_yaml
+
+- name: Restart kube-proxy service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+    name: kube-proxy
+  become: true
+  when:
+    - (copy_proxy_system.changed | bool) or
+      (copy_proxy_config.changed | bool) or
+      (copy_proxy_yaml.changed | bool) or
+      (check_proxy_process.stdout == "0")

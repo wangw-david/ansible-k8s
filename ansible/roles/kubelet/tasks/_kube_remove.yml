@@ -1,0 +1,96 @@
+---
+- name: Stop kubelet service
+  systemd:
+    state: stopped
+    daemon_reload: yes
+    enabled: no
+    name: kubelet
+  become: true
+  ignore_errors: yes
+
+- name: Stop kube-proxy service
+  systemd:
+    state: stopped
+    daemon_reload: yes
+    enabled: no
+    name: kube-proxy
+  become: true
+  ignore_errors: yes
+
+- name: Remove the old systemd file
+  file:
+    dest: "/usr/lib/systemd/system/{{ item }}"
+    state: absent
+  become: true
+  with_items:
+    - "kubelet.service"
+    - "kube-proxy.service"
+
+- name: Remove the old config file
+  file:
+    dest: "{{ kubelet_config_path }}"
+    state: absent
+  become: true
+
+- name: Remove the kubelet binary from system
+  file:
+    dest: "{{ kubelet_bin_path }}/{{ item.binary_name }}"
+    state: absent
+  become: true
+  with_items: "{{ kubelet_services }}"
+
+- name: Remove the kubelet run path
+  file:
+    dest: "/run/kubernetes"
+    state: absent
+  become: true
+
+- name: Remove the kubelet work path
+  file:
+    dest: "{{ kubelet_work_path }}"
+    state: absent
+  become: true
+
+- name: Remove the docker configuration EnvironmentFile
+  lineinfile:
+    path: /usr/lib/systemd/system/docker.service
+    state: absent
+    regexp: 'EnvironmentFile=-/run/flannel/docker'
+  become: true
+  register: remove_docker_env
+
+- name: Remove the docker configuration ExecStart
+  lineinfile:
+    path: /usr/lib/systemd/system/docker.service
+    regexp: '^ExecStart=\/usr\/bin\/dockerd \$DOCKER_OPTS'
+    line: 'ExecStart=/usr/bin/dockerd'
+  become: true
+  register: remove_docker_exec
+
+- name: Remove the docker configuration After
+  lineinfile:
+    path: /usr/lib/systemd/system/docker.service
+    state: absent
+    regexp: 'After=network.target flanneld.service'
+  become: true
+  register: remove_docker_after
+
+- name: Remove the docker configuration Requires
+  lineinfile:
+    path: /usr/lib/systemd/system/docker.service
+    state: absent
+    regexp: 'Requires=flanneld.service'
+  become: true
+  register: remove_docker_requires
+
+- name: Restart docker service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: docker
+  become: true
+  when:
+    - (remove_docker_env.changed | bool) or
+      (remove_docker_exec.changed | bool) or
+      (remove_docker_after.changed | bool) or
+      (remove_docker_requires.changed | bool)

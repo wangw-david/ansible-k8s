@@ -1,0 +1,223 @@
+#!/bin/bash
+#
+# This script can be used to interact with ansible-k8s via ansible.
+
+function find_base_dir {
+    local real_path=$(python -c "import os;print(os.path.realpath('$0'))")
+    local dir_name="$(dirname "$real_path")"
+    if [ -z "$SNAP" ]; then
+        if [[ ${dir_name} == "/usr/bin" ]]; then
+            BASEDIR=/usr/share/ansible-k8s
+        elif [[ ${dir_name} == "/usr/local/bin" ]]; then
+            BASEDIR=/usr/local/share/ansible-k8s
+        elif [[ -n ${VIRTUAL_ENV} ]] && [[ ${dir_name} == "${VIRTUAL_ENV}/bin" ]]; then
+            BASEDIR="${VIRTUAL_ENV}/share/ansible-k8s"
+        else
+            BASEDIR="$(dirname ${dir_name})"
+        fi
+    else
+        BASEDIR="$SNAP/share/ansible-k8s"
+    fi
+}
+
+function process_cmd {
+    echo "$ACTION : $CMD"
+    $CMD
+    if [[ $? -ne 0 ]]; then
+        echo "Command failed $CMD"
+        exit 1
+    fi
+}
+
+function usage {
+    cat <<EOF
+Usage: $0 COMMAND [options]
+
+Options:
+    --inventory, -i <inventory_path>   Specify path to ansible inventory file
+    --playbook, -p <playbook_path>     Specify path to ansible playbook file
+    --configdir <config_path>          Specify path to directory with globals.yml
+    --help, -h                         Show this usage information
+    --tags, -t <tags>                  Only run plays and tasks tagged with these values
+    --skip-tags <tags>                 Only run plays and tasks whose tags do not match these values
+    --extra, -e <ansible variables>    Set additional variables as key=value or YAML/JSON passed to ansible-playbook
+    --passwords <passwords_path>       Specify path to the passwords file
+    --limit <host>                     Specify host to run plays
+    --forks <forks>                    Number of forks to run Ansible with
+    --verbose, -v                      Increase verbosity of ansible-playbook
+
+Commands:
+    check               Do some check tasks
+    deploy              Deploy and start all k8s services
+    remove              Remove k8s service and config
+    reconfigure         Reconfigure k8s service
+    upgrade             Upgrades existing k8s Environment
+    stop                Stop k8s service
+EOF
+}
+
+function bash_completion {
+cat <<EOF
+--inventory -i
+--playbook -p
+--configdir
+--help -h
+--skip-tags
+--tags -t
+--extra -e
+--passwords
+--limit
+--forks
+--verbose -v
+check
+deploy
+remove
+reconfigure
+upgrade
+stop
+EOF
+}
+
+SHORT_OPTS="hi:p:t:e:v"
+LONG_OPTS="help,inventory:,playbook:,skip-tags:,tags:,extra:,verbose,configdir:,passwords:,limit:,forks:,yes-i-really-really-mean-it"
+
+RAW_ARGS="$*"
+ARGS=$(getopt -o "${SHORT_OPTS}" -l "${LONG_OPTS}" --name "$0" -- "$@") || { usage >&2; exit 2; }
+
+eval set -- "$ARGS"
+
+find_base_dir
+
+INVENTORY="${BASEDIR}/ansible/inventory/all-in-one"
+PLAYBOOK="${BASEDIR}/ansible/site.yml"
+VERBOSITY=
+EXTRA_OPTS=${EXTRA_OPTS}
+CONFIG_DIR="/etc/ansible-k8s"
+DANGER_CONFIRM=
+# Serial is not recommended and disabled by default. Users can enable it by
+# configuring KUBE_SERIAL variable.
+KUBE_SERIAL=${KUBE_SERIAL:-0}
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+
+    (--inventory|-i)
+            INVENTORY="$2"
+            shift 2
+            ;;
+
+    (--playbook|-p)
+            PLAYBOOK="$2"
+            shift 2
+            ;;
+
+    (--skip-tags)
+            EXTRA_OPTS="$EXTRA_OPTS --skip-tags $2"
+            shift 2
+            ;;
+
+    (--tags|-t)
+            EXTRA_OPTS="$EXTRA_OPTS --tags $2"
+            shift 2
+            ;;
+
+    (--verbose|-v)
+            VERBOSITY="$VERBOSITY --verbose"
+            shift 1
+            ;;
+
+    (--configdir)
+            CONFIG_DIR="$2"
+            shift 2
+            ;;
+
+    (--yes-i-really-really-mean-it)
+            if [[ ${RAW_ARGS} =~ "$1" ]]
+            then
+                DANGER_CONFIRM="$1"
+            fi
+            shift 1
+            ;;
+
+    (--extra|-e)
+            EXTRA_OPTS="$EXTRA_OPTS -e $2"
+            shift 2
+            ;;
+
+    (--passwords)
+            PASSWORDS_FILE="$2"
+            EXTRA_OPTS="$EXTRA_OPTS -e @${PASSWORDS_FILE}"
+            shift 2
+            ;;
+
+    (--limit)
+            EXTRA_OPTS="$EXTRA_OPTS --limit $2"
+            shift 2
+            ;;
+
+    (--forks)
+            EXTRA_OPTS="$EXTRA_OPTS --forks $2"
+            shift 2
+            ;;
+
+    (--help|-h)
+            usage
+            shift
+            exit 0
+            ;;
+
+    (--)
+            shift
+            break
+            ;;
+
+    (*)
+            echo "error"
+            exit 3
+            ;;
+esac
+done
+
+case "$1" in
+
+(check)
+        ACTION="Checking k8s service"
+        EXTRA_OPTS="$EXTRA_OPTS -e kube_action=_kube_check"
+        ;;
+(remove)
+        ACTION="Remove k8s service and configuration"
+        EXTRA_OPTS="$EXTRA_OPTS -e kube_action=_kube_remove -e kube_serial=${KUBE_SERIAL}"
+        if [[ "${DANGER_CONFIRM}" != "--yes-i-really-really-mean-it" ]]; then
+            cat << EOF
+WARNING:
+    This will PERMANENTLY DESTROY all deployed k8s services and host configuration.
+    There is no way to recover from this action. To confirm, please add the following option:
+    --yes-i-really-really-mean-it
+EOF
+            exit 1
+        fi
+        ;;
+(deploy)
+        ACTION="Deploying k8s Playbooks"
+        EXTRA_OPTS="$EXTRA_OPTS -e kube_action=_kube_deploy -e kube_serial=${KUBE_SERIAL}"
+        ;;
+(upgrade)
+        ACTION="Upgrading k8s Environment"
+        EXTRA_OPTS="$EXTRA_OPTS -e kube_action=_kube_upgrade -e kube_serial=${KUBE_SERIAL}"
+        ;;
+(reconfigure)
+        ACTION="Reconfigure k8s service"
+        EXTRA_OPTS="$EXTRA_OPTS -e kube_action=_kube_reconfigure -e kube_serial=${KUBE_SERIAL}"
+        ;;
+(stop)
+        ACTION="Stop k8s service"
+        EXTRA_OPTS="$EXTRA_OPTS -e kube_action=_kube_stop -e kube_serial=${KUBE_SERIAL}"
+        ;;
+(*)     usage
+        exit 0
+        ;;
+esac
+
+CONFIG_OPTS="-e @${CONFIG_DIR}/globals.yml"
+CMD="ansible-playbook -i $INVENTORY $CONFIG_OPTS $EXTRA_OPTS $PLAYBOOK $VERBOSITY"
+process_cmd

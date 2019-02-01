@@ -1,0 +1,48 @@
+---
+- name: Sets a cluster entry in kubeconfig
+  command: kubectl config set-cluster kubernetes
+    --certificate-authority={{ deploy_k8s_cert_path }}/ca.crt
+    --embed-certs=true
+    --server={{ k8s_api_server_https_url }}
+    --kubeconfig={{ deploy_k8s_cert_path }}/scheduler.scheduler
+  run_once: true
+  delegate_to: localhost
+
+- name: Sets a user entry in kubeconfig
+  command: kubectl config set-credentials system:kube-scheduler
+    --client-certificate={{ deploy_k8s_cert_path }}/apiserver.crt
+    --embed-certs=true
+    --client-key={{ deploy_k8s_cert_path }}/apiserver.key
+    --kubeconfig={{ deploy_k8s_cert_path }}/scheduler.scheduler
+  run_once: true
+  delegate_to: localhost
+
+- name: Sets a context entry in kubeconfig
+  command: kubectl config set-context system:kube-scheduler@kubernetes
+    --cluster=kubernetes
+    --user=system:kube-scheduler
+    --kubeconfig={{ deploy_k8s_cert_path }}/scheduler.kubeconfig
+  run_once: true
+  delegate_to: localhost
+
+- name: Set default context
+  command: kubectl config use-context system:kube-scheduler@kubernetes
+    --kubeconfig={{ deploy_k8s_cert_path }}/scheduler.kubeconfig
+  run_once: true
+  delegate_to: localhost
+
+- name: Change the certificate owner and group
+  file:
+    path: "{{ deploy_k8s_cert_path }}/scheduler.kubeconfig"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    mode: 0664
+  delegate_to: localhost
+  become: true
+
+- name: Distribute scheduler.conf to server nodes
+  copy:
+    src: "{{ deploy_k8s_cert_path }}/scheduler.kubeconfig"
+    dest: "{{ kube_apiserver_config_path }}/scheduler.kubeconfig"
+  become: true
+  register: copy_scheduler_kubeconfig

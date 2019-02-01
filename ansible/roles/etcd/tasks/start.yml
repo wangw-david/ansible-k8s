@@ -1,0 +1,53 @@
+---
+- name: Install the etcd
+  yum:
+    name: etcd
+    state: installed
+  become: true
+  register: install_etcd
+
+- name: Remove the old systemd file of etcd
+  file:
+    dest: "/usr/lib/systemd/system/etcd.service"
+    state: absent
+  become: true
+  when: install_etcd.changed | bool
+
+- name: Copying over systemd files for etcd
+  template:
+    src: "etcd.service.j2"
+    dest: "/usr/lib/systemd/system/etcd.service"
+    mode: "0644"
+  become: true
+  register: copy_etcd_system
+
+- name: Remove the old config file of etcd
+  file:
+    dest: "{{ etcd_config_path }}/etcd.conf"
+    state: absent
+  become: true
+  when: install_etcd.changed | bool
+
+- name: Copying over config files for etcd
+  template:
+    src: "etcd.conf.j2"
+    dest: "{{ etcd_config_path }}/etcd.conf"
+    mode: "0644"
+  become: true
+  register: copy_etcd_config
+
+- include_tasks: check_process.yml
+
+- name: Restart etcd service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+    name: etcd.service
+  become: true
+  when:
+    - (copy_etcd_system.changed | bool) or
+      (copy_etcd_config.changed | bool) or
+      (check_etcd_process.stdout == "0")
+
+- include_tasks: check_cluster.yml

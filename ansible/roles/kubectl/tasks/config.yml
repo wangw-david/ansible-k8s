@@ -1,0 +1,41 @@
+---
+- name: Ensuring kube deploy directories exist in deploy node
+  file:
+    path: "{{ kubectl_deploy_path }}"
+    state: "directory"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    mode: "0770"
+  become: true
+  run_once: true
+  delegate_to: localhost
+
+- name: Ensuring kubectl config directories exist
+  file:
+    path: "{{ kubectl_config_path }}"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    state: "directory"
+    mode: "0770"
+  become: true
+
+- name: Ensuring kubectl auth config directories exist
+  file:
+    path: "{{ kubectl_cert_config_path }}"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    state: "directory"
+    mode: "0770"
+  become: true
+
+- name: Distribute certificates to kubectl nodes
+  copy:
+    src: "{{ deploy_k8s_cert_path }}/{{ item }}"
+    dest: "{{ kubectl_cert_config_path }}/{{ item }}"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+  become: true
+  with_items:
+    - "kube-admin.crt"
+    - "kube-admin.key"
+    - "ca.crt"

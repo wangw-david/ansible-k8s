@@ -1,0 +1,20 @@
+---
+- name: Set kube cluster parameters
+  command: kubectl config set-cluster kubernetes
+    --certificate-authority={{ kubectl_cert_config_path }}/ca.crt
+    --embed-certs=true
+    --server={{ k8s_api_server_https_url }}
+
+- name: Set client authentication parameters
+  command: kubectl config set-credentials admin
+    --client-certificate={{ kubectl_cert_config_path }}/kube-admin.crt
+    --embed-certs=true
+    --client-key={{ kubectl_cert_config_path }}/kube-admin.key
+
+- name: Set context parameters
+  command: kubectl config set-context kubernetes
+    --cluster=kubernetes
+    --user=admin
+
+- name: Set default context
+  command: kubectl config use-context kubernetes

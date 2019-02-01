@@ -1,0 +1,73 @@
+---
+- include_tasks: check_auth.yml
+  vars:
+    ca_name_check: "{{ ca_name }}"
+    is_issuer_check: "{{ is_issuer }}"
+
+- name: Run the command that generated the {{ ca_name }}.key
+  shell: "openssl genrsa -out {{ deploy_k8s_cert_path }}/{{ ca_name }}.key 2048"
+  become: true
+  run_once: true
+  when: not check_key.stat.exists
+
+- name: Change the {{ ca_name }}.key owner and group
+  file:
+    path: "{{ deploy_k8s_cert_path }}/{{ ca_name }}.key"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    mode: 0664
+  become: true
+
+- name: Run the command that generated the {{ ca_name }}.csr
+  shell: "openssl req -new
+    -key {{ deploy_k8s_cert_path }}/{{ ca_name }}.key
+    -out {{ deploy_k8s_cert_path }}/{{ ca_name }}.csr
+    -config {{ deploy_k8s_cert_path }}/{{ ca_name }}-csr.conf"
+  become: true
+  run_once: true
+  when: not check_csr.stat.exists
+
+- name: Change the {{ ca_name }}.csr owner and group
+  file:
+    path: "{{ deploy_k8s_cert_path }}/{{ ca_name }}.csr"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    mode: 0664
+  become: true
+
+- name: Run the command that generated the {{ ca_name }}.crt
+  shell: "openssl req -x509 -new -nodes
+    -key {{ deploy_k8s_cert_path }}/{{ ca_name }}.key
+    -in {{ deploy_k8s_cert_path }}/{{ ca_name }}.csr
+    -days {{ ca_days }}
+    -out {{ deploy_k8s_cert_path }}/{{ ca_name }}.crt
+    -extensions v3_ext
+    -config {{ deploy_k8s_cert_path }}/{{ ca_name }}-csr.conf"
+  become: true
+  run_once: true
+  when:
+    - is_issuer | bool
+    - not check_crt.stat.exists
+
+- name: Run the command that generated the sub {{ ca_name }}.crt
+  shell: "openssl x509 -req
+      -in {{ deploy_k8s_cert_path }}/{{ ca_name }}.csr
+      -CA {{ deploy_k8s_cert_path }}/{{ ca_issuer_name }}.crt
+      -CAkey {{ deploy_k8s_cert_path }}/{{ ca_issuer_name }}.key
+      -CAcreateserial -out {{ deploy_k8s_cert_path }}/{{ ca_name }}.crt
+      -days {{ ca_days }}
+      -extensions v3_ext
+      -extfile {{ deploy_k8s_cert_path }}/{{ ca_name }}-csr.conf"
+  become: true
+  run_once: true
+  when:
+    - not (is_issuer | bool)
+    - not check_crt.stat.exists
+
+- name: Change the {{ ca_name }}.crt owner and group
+  file:
+    path: "{{ deploy_k8s_cert_path }}/{{ ca_name }}.crt"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    mode: 0664
+  become: true

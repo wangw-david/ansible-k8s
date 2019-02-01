@@ -1,0 +1,40 @@
+---
+- name: Ensuring the deploy directories exist in deploy node
+  file:
+    path: "{{ deploy_config_path }}"
+    state: "directory"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    mode: "0770"
+  become: true
+
+- name: Ensuring the auth directories exist in deploy node
+  file:
+    path: "{{ deploy_k8s_cert_path }}"
+    state: "directory"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    mode: "0770"
+  become: true
+
+- name: Copying over CA files for services
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ deploy_k8s_cert_path }}/{{ item }}"
+    mode: "0660"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+  become: true
+  with_items:
+    - "ca-csr.conf"
+    - "apiserver-csr.conf"
+    - "apiserver-kubelet-client-csr.conf"
+    - "apiserver-kube-proxy-client-csr.conf"
+    - "kube-admin-csr.conf"
+    - "front-proxy-ca-csr.conf"
+    - "front-proxy-client-csr.conf"
+    - "etcd-ca-csr.conf"
+    - "etcd-server-csr.conf"
+    - "etcd-peer-csr.conf"
+    - "kube-apiserver-etcd-client-csr.conf"
+    - "kube-etcd-healthcheck-client-csr.conf"

@@ -1,0 +1,48 @@
+---
+- include_tasks: check_systemd.yml
+
+- name: Download the k8s server zip file
+  get_url:
+    url: "{{ k8s_server_download_url }}"
+    dest: "{{ kubelet_deploy_path }}"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+  become: true
+  delegate_to: localhost
+  run_once: true
+  when: not check_kubelet_download.stat.exists | bool
+
+- name: Unarchive the kubernetes zip file
+  unarchive:
+    src: "{{ kubelet_deploy_path }}/{{ k8s_server_zip_name }}"
+    dest: "{{ kubelet_deploy_path }}"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    remote_src: yes
+  become: true
+  delegate_to: localhost
+  run_once: true
+  when: not check_kubelet_unzip.stat.exists | bool
+
+- name: Unarchive the kubernetes-src zip file
+  unarchive:
+    src: "{{ kubelet_deploy_path }}/kubernetes/kubernetes-src.tar.gz"
+    dest: "{{ kubelet_deploy_path }}/kubernetes/"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    remote_src: yes
+  become: true
+  delegate_to: localhost
+  run_once: true
+  when: not check_kubelet_src_unzip.stat.exists | bool
+
+- name: Copy the kubelet binary to system
+  copy:
+    src: "{{ kubelet_deploy_path }}/kubernetes/server/bin/{{ item.0.binary_name }}"
+    dest: "{{ kubelet_bin_path }}/{{ item.0.binary_name }}"
+    mode: 0755
+  become: true
+  with_together:
+    - "{{ kubelet_services }}"
+    - "{{ check_kubelet_binary.results | map(attribute='stat.exists') | list }}"
+  when: not item.1 | bool

@@ -1,0 +1,14 @@
+---
+- name: Check etcd cluster status
+  command: etcdctl
+    --ca-file={{ etcd_config_path }}/etcd-ca.crt
+    --cert-file={{ etcd_config_path }}/etcd-server.crt
+    --key-file={{ etcd_config_path }}/etcd-server.key
+    cluster-health
+  run_once: true
+  register: check_etcd_cluster
+  become: true
+  changed_when: no
+  ignore_errors: yes
+
+- debug: var=check_etcd_cluster.stdout verbosity={{ debug_level }}

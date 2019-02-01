@@ -1,0 +1,3 @@
+---
+flannel_etcd_network_prefix: "/kube-centos/network"
+flannel_network_config: {"Network": "{{ flannel_network_iprange }}", "SubnetLen": 24, "Backend":{"Type": "vxlan"}}

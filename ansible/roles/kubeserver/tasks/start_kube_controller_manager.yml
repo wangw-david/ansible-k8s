@@ -1,0 +1,31 @@
+---
+- name: Copying over kube-controller-manager.service for services
+  template:
+    src: "kube-controller-manager.service.j2"
+    dest: "/usr/lib/systemd/system/kube-controller-manager.service"
+    mode: "0644"
+  become: true
+  register: copy_control_system
+
+- name: Copying over controller-manager config for services
+  template:
+    src: "kube-controller-manager.conf.j2"
+    dest: "{{ kube_apiserver_config_path }}/kube-controller-manager.conf"
+    mode: "0644"
+  become: true
+  register: copy_control_config
+
+- include_tasks: set_control_manager.yml
+
+- name: Restart kube-controller-manager service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+    name: kube-controller-manager
+  become: true
+  when:
+    - (copy_control_system.changed | bool) or
+      (copy_control_config.changed | bool) or
+      (copy_controller_kubeconfig.changed | bool) or
+      (check_controller_process.stdout == "0")

@@ -1,0 +1,18 @@
+---
+- include_tasks: check_auth.yml
+  vars:
+    ca_name_check: "{{ item.name }}"
+    is_issuer_check: "{{ item.is_issuer }}"
+  with_items: "{{ kube_certificates }}"
+
+- include_tasks: check_auth.yml
+  vars:
+    ca_name_check: "{{ item.name }}"
+    is_issuer_check: "{{ item.is_issuer }}"
+  with_items: "{{ front_proxy_certificates }}"
+
+- include_tasks: check_auth.yml
+  vars:
+    ca_name_check: "{{ item.name }}"
+    is_issuer_check: "{{ item.is_issuer }}"
+  with_items: "{{ etcd_certificates }}"

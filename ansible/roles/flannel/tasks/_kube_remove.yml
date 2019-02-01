@@ -1,0 +1,52 @@
+---
+- name: Stop flannel service
+  systemd:
+    state: stopped
+    daemon_reload: yes
+    enabled: no
+    name: flanneld
+  become: true
+  ignore_errors: yes
+
+- name: Remove the flannel package
+  yum:
+    name: flannel
+    state: absent
+  become: true
+  ignore_errors: yes
+
+- name: Remove the systemd file of flannel
+  file:
+    dest: "/usr/lib/systemd/system/flanneld.service"
+    state: absent
+  become: true
+
+- name: Remove the config file of flannel
+  file:
+    dest: "/etc/sysconfig/flanneld"
+    state: absent
+  become: true
+
+- name: Remove the network configuration in etcd
+  command: etcdctl
+    --endpoints={{ etcd_cluster_url }}
+    --ca-file={{ etcd_config_path }}/ca.pem
+    --cert-file={{ etcd_config_path }}/kubernetes.pem
+    --key-file={{ etcd_config_path }}/kubernetes-key.pem
+    rm {{ flannel_etcd_network_prefix }}/config
+  become: true
+  run_once: true
+  delegate_to: "{{ groups['etcd'][0] }}"
+  ignore_errors: yes
+
+- name: Remove the network path in etcd
+  command: etcdctl
+    --endpoints={{ etcd_cluster_url }}
+    --ca-file={{ etcd_config_path }}/ca.pem
+    --cert-file={{ etcd_config_path }}/kubernetes.pem
+    --key-file={{ etcd_config_path }}/kubernetes-key.pem
+    rmdir {{ flannel_etcd_network_prefix }}
+  become: true
+  run_once: true
+  delegate_to: "{{ groups['etcd'][0] }}"
+  ignore_errors: yes

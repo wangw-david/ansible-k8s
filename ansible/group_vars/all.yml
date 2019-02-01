@@ -1,0 +1,64 @@
+---
+###################
+# deploy options
+###################
+
+# The path is used to deploy k8s services
+deploy_config_path: "/home/ansible-k8s"
+# This path is used to generate the authentication file in the deployment node.
+deploy_k8s_cert_path: "{{ deploy_config_path }}/k8s-cert"
+
+# The ip of current node
+api_interface_address:  "{{ hostvars[inventory_hostname]['ansible_' + api_interface]['ipv4']['address'] }}"
+
+# The group which own deploy_config_path, you can use a non-root
+# user to deploy k8s and kubectl
+config_owner_user: "root"
+config_owner_group: "root"
+
+# Ansible debug level for printing some built-in debug information
+debug_level: 3
+###################
+# k8s options
+###################
+k8s_version: "1.13.0"
+k8s_client_zip_name: "kubernetes-client-linux-amd64.tar.gz"
+k8s_client_download_url: "https://dl.k8s.io/v{{ k8s_version }}/{{ k8s_client_zip_name }}"
+k8s_client_download_path: "{{ deploy_config_path }}/k8s-client"
+k8s_server_zip_name: "kubernetes-server-linux-amd64.tar.gz"
+k8s_server_download_url: "https://dl.k8s.io/v{{ k8s_version }}/{{ k8s_server_zip_name }}"
+k8s_server_download_path: "{{ deploy_config_path }}/k8s-server"
+
+# The path of k8s default configuration
+k8s_config_directory: "/etc/kubernetes"
+# kube configs
+k8s_api_server_vip: "Your api ip"
+k8s_api_server_https_url: "https://{{ k8s_api_server_vip }}:6443"
+k8s_api_server_http_url: "http://{{ k8s_api_server_vip }}:8080"
+k8s_service_cluster_ip_range: "192.168.0.0/16"
+k8s_service_cluster_ip: "192.168.0.1"
+k8s_service_cluster_dns: "192.168.0.2"
+k8s_log_path: "/var/log/kubernetes"
+
+###################
+# flannel options
+###################
+flannel_config_path: "/etc/flannel"
+flannel_network_iprange: "172.30.0.0/16"
+
+###################
+# etcd options
+###################
+etcd_config_path: "/etc/etcd"
+etcd_cluster_url: "{% for host in groups['etcd'] -%}https://{{ hostvars[host]['ansible_' + api_interface]['ipv4']['address'] }}:2379{% if not loop.last %},{% endif %}{%- endfor %}"
+etcd_init_cluster_url: "{% for host in groups['etcd'] -%}infra{{ loop.index }}=https://{{ hostvars[host]['ansible_' + api_interface]['ipv4']['address'] }}:2380{% if not loop.last %},{% endif %}{%- endfor %}"
+
+###################
+# enable options
+###################
+enable_openssl: "yes"
+enable_kubectl: "yes"
+enable_etcd: "yes"
+enable_kubeserver: "yes"
+enable_flannel: "yes"
+enable_kubelet: "yes"

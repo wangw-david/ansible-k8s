@@ -1,0 +1,4 @@
+---
+- include_tasks: install_systemd.yml
+
+- include_tasks: set_admin.yml

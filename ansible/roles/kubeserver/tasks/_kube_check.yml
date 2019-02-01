@@ -1,0 +1,4 @@
+---
+- include_tasks: check_systemd.yml
+
+- include_tasks: check_process.yml

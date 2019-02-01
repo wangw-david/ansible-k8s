@@ -1,0 +1,27 @@
+---
+- name: Check key file
+  stat:
+    path: "{{ deploy_k8s_cert_path }}/{{ ca_name }}.key"
+  register: check_key
+  become: true
+
+- name: Show check_key info
+  debug: var=check_key verbosity={{ debug_level }}
+
+- name: Check csr file
+  stat:
+    path: "{{ deploy_k8s_cert_path }}/{{ ca_name }}.csr"
+  register: check_csr
+  become: true
+
+- name: Show check_csr info
+  debug: var=check_csr verbosity={{ debug_level }}
+
+- name: Check crt file
+  stat:
+    path: "{{ deploy_k8s_cert_path }}/{{ ca_name }}.crt"
+  register: check_crt
+  become: true
+
+- name: Show check_crt info
+  debug: var=check_crt verbosity={{ debug_level }}

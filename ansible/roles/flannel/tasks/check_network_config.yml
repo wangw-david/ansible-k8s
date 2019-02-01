@@ -1,0 +1,36 @@
+---
+- name: Check the flannel network status
+  command: etcdctl
+    --endpoints={{ etcd_cluster_url }}
+    --ca-file={{ flannel_config_path }}/etcd-ca.crt
+    --cert-file={{ flannel_config_path }}/etcd-server.crt
+    --key-file={{ flannel_config_path }}/etcd-server.key
+    ls {{ flannel_etcd_network_prefix }}
+  register: check_flannel_network
+  become: true
+  run_once: true
+  delegate_to: "{{ groups['etcd'][0] }}"
+  changed_when: no
+  ignore_errors: yes
+
+- debug: var=check_flannel_network verbosity={{ debug_level }}
+  become: true
+  run_once: true
+
+- name: Check the flannel network config status
+  command: etcdctl
+    --endpoints={{ etcd_cluster_url }}
+    --ca-file={{ flannel_config_path }}/etcd-ca.crt
+    --cert-file={{ flannel_config_path }}/etcd-server.crt
+    --key-file={{ flannel_config_path }}/etcd-server.key
+    get {{ flannel_etcd_network_prefix }}/config
+  register: check_flannel_network_config
+  become: true
+  run_once: true
+  changed_when: no
+  delegate_to: "{{ groups['etcd'][0] }}"
+  ignore_errors: yes
+
+- debug: var=check_flannel_network_config verbosity={{ debug_level }}
+  become: true
+  run_once: true

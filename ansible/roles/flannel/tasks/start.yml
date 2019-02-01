@@ -1,0 +1,68 @@
+---
+- include_tasks: check_process.yml
+
+- include_tasks: check_network_config.yml
+
+- name: Install the flannel
+  yum:
+    name: flannel
+    state: installed
+  become: true
+
+- name: Copying over systemd for flanneld
+  template:
+    src: "flanneld.service.j2"
+    dest: "/usr/lib/systemd/system/flanneld.service"
+    mode: "0644"
+  become: true
+  register: copy_flannel_system
+
+- name: Copying over config for flanneld
+  template:
+    src: "flanneld.j2"
+    dest: "{{ flannel_config_path }}/flanneld"
+    mode: "0644"
+  become: true
+  register: copy_flannel_config
+
+- name: Create the network path of flannel in etcd
+  command: etcdctl
+    --endpoints={{ etcd_cluster_url }}
+    --ca-file={{ flannel_config_path }}/etcd-ca.crt
+    --cert-file={{ flannel_config_path }}/etcd-server.crt
+    --key-file={{ flannel_config_path }}/etcd-server.key
+    mkdir {{ flannel_etcd_network_prefix }}
+  become: true
+  run_once: true
+  delegate_to: "{{ groups['etcd'][0] }}"
+  register: create_network
+  when: check_flannel_network.rc != 0
+
+- name: Create the network configuration of flannel in etcd
+  command: etcdctl
+    --endpoints={{ etcd_cluster_url }}
+    --ca-file={{ flannel_config_path }}/etcd-ca.crt
+    --cert-file={{ flannel_config_path }}/etcd-server.crt
+    --key-file={{ flannel_config_path }}/etcd-server.key
+    mk {{ flannel_etcd_network_prefix }}/config '{{ flannel_network_config | to_json }}'
+  become: true
+  run_once: true
+  delegate_to: "{{ groups['etcd'][0] }}"
+  register: create_network_config
+  when: check_flannel_network_config.rc != 0
+
+- name: Restart flanneld service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+    name: flanneld
+  become: true
+  when:
+    - (copy_flannel_system.changed | bool) or
+      (copy_flannel_config.changed | bool) or
+      (check_flanneld_process.stdout == '0')
+
+- name: Modify iptables rules
+  command: iptables -P FORWARD ACCEPT
+  become: true

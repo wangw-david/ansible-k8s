@@ -1,0 +1,18 @@
+###
+# kubernetes scheduler config
+
+# --logtostderr=true: log to standard error instead of files
+KUBE_LOGTOSTDERR="--logtostderr=false"
+
+# --v=0: log level for V logs
+KUBE_LOG_LEVEL="--v=4"
+
+# --master: The address of the Kubernetes API server (overrides any value in kubeconfig).
+KUBE_MASTER="--master={{ k8s_api_server_http_url }}"
+
+# --leader-elect: Start a leader election client and gain leadership before
+# executing the main loop. Enable this when running replicated components for high availability.
+KUBE_LEADER_ELECT="--leader-elect=true"
+
+# Add your own!
+KUBE_SCHEDULER_ARGS="{% for arg in kube_scheduler_args %}{{ arg }}{% if not loop.last %} {% endif %}{% endfor %}"

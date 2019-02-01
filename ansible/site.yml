@@ -1,0 +1,82 @@
+---
+- name: Gather facts for all hosts
+  hosts: all
+  serial: '{{ ansible_serial | default("0") }}'
+  gather_facts: false
+  tasks:
+    - setup:
+  tags: always
+
+- name: Gather facts for all hosts (if using --limit)
+  hosts: all
+  serial: '{{ ansible_serial | default("0") }}'
+  gather_facts: false
+  tasks:
+    - setup:
+      delegate_facts: True
+      delegate_to: "{{ item }}"
+      with_items: "{{ groups['all'] }}"
+      when:
+        - (ansible_play_batch | length) != (groups['all'] | length)
+  tags: always
+
+- name: Apply role openssl
+  gather_facts: false
+  hosts:
+    - openssl
+  serial: '{{ ansible_serial|default("0") }}'
+  roles:
+    - { role: openssl,
+        tags: openssl,
+        when: enable_openssl | bool }
+
+- name: Apply role kubectl
+  gather_facts: false
+  hosts:
+    - kubectl
+    - deploy
+  serial: '{{ ansible_serial|default("0") }}'
+  roles:
+    - { role: kubectl,
+        tags: kubectl,
+        when: enable_kubectl | bool }
+
+- name: Apply role etcd
+  gather_facts: false
+  hosts:
+    - etcd
+  serial: '{{ ansible_serial|default("0") }}'
+  roles:
+    - { role: etcd,
+        tags: etcd,
+        when: enable_etcd | bool }
+
+- name: Apply role kubeserver
+  gather_facts: false
+  hosts:
+    - kubeserver
+  serial: '{{ ansible_serial|default("0") }}'
+  roles:
+    - { role: kubeserver,
+        tags: kubeserver,
+        when: enable_kubeserver | bool }
+
+- name: Apply role flannel
+  gather_facts: false
+  hosts:
+    - flannel
+  serial: '{{ ansible_serial|default("0") }}'
+  roles:
+    - { role: flannel,
+        tags: flannel,
+        when: enable_flannel | bool }
+
+- name: Apply role kubelet
+  gather_facts: false
+  hosts:
+    - kubelet
+  serial: '{{ ansible_serial|default("0") }}'
+  roles:
+    - { role: kubelet,
+        tags: kubelet,
+        when: enable_kubelet | bool }

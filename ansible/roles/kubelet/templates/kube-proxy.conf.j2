@@ -1,0 +1,2 @@
+# Add your own!
+KUBE_PROXY_ARGS="{% for arg in kube_proxy_args %}{{ arg }}{% if not loop.last %} {% endif %}{% endfor %}"

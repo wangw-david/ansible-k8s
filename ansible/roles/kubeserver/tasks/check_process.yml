@@ -1,0 +1,27 @@
+---
+- name: Check the kube-apiserver service is running
+  shell: ps -ef | grep -w "{{ kube_apiserver_bin_path }}/kube-apiserver" | grep -v grep | wc -l
+  register: check_api_process
+  check_mode: no
+  ignore_errors: yes
+  changed_when: no
+
+- debug: var=check_api_process verbosity={{ debug_level }}
+
+- name: Check the kube-controller-manager service is running
+  shell: ps -ef | grep -w "{{ kube_apiserver_bin_path }}/kube-controller-manager"| grep -v grep | wc -l
+  register: check_controller_process
+  check_mode: no
+  ignore_errors: yes
+  changed_when: no
+
+- debug: var=check_controller_process verbosity={{ debug_level }}
+
+- name: Check the kube-scheduler service is running
+  shell: ps -ef | grep -w "{{ kube_apiserver_bin_path }}/kube-scheduler" | grep -v grep | wc -l
+  register: check_scheduler_process
+  check_mode: no
+  ignore_errors: yes
+  changed_when: no
+
+- debug: var=check_scheduler_process verbosity={{ debug_level }}

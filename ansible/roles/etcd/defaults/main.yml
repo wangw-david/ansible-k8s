@@ -1,0 +1,2 @@
+---
+etcd_work_path: "/var/lib/etcd/"

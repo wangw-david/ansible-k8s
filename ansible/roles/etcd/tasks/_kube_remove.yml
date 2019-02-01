@@ -1,0 +1,33 @@
+---
+- name: Stop etcd service
+  systemd:
+    state: stopped
+    daemon_reload: yes
+    enabled: no
+    name: etcd.service
+  become: true
+  ignore_errors: yes
+
+- name: Remove the etcd package
+  yum:
+    name: etcd
+    state: absent
+  become: true
+
+- name: Remove the systemd file of etcd
+  file:
+    dest: "/usr/lib/systemd/system/etcd.service"
+    state: absent
+  become: true
+
+- name: Remove the config path of etcd
+  file:
+    dest: "{{ etcd_config_path }}/"
+    state: absent
+  become: true
+
+- name: Remove the work path of etcd
+  file:
+    dest: "{{ etcd_work_path }}"
+    state: absent
+  become: true

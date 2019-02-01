@@ -1,0 +1,9 @@
+---
+- name: Check if the flanneld process is running
+  shell: ps -ef | grep -w "/usr/bin/flanneld" | grep -v grep | wc -l
+  register: check_flanneld_process
+  check_mode: no
+  ignore_errors: yes
+  changed_when: no
+
+- debug: var=check_flanneld_process verbosity={{ debug_level }}

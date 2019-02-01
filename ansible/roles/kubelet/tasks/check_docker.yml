@@ -1,0 +1,44 @@
+---
+- name: Check the EnvironmentFile of docker service
+  command: grep -Fxq "EnvironmentFile=-/run/flannel/docker" /usr/lib/systemd/system/docker.service
+  become: true
+  register: check_docker_env
+  check_mode: no
+  ignore_errors: yes
+  changed_when: no
+
+- name: Show check_docker_env info
+  debug: var=check_docker_env verbosity={{ debug_level }}
+
+- name: Check the ExecStart of docker service
+  command: grep -Fxq "ExecStart=/usr/bin/dockerd $DOCKER_OPTS" /usr/lib/systemd/system/docker.service
+  become: true
+  register: check_docker_exec
+  check_mode: no
+  ignore_errors: yes
+  changed_when: no
+
+- name: Show check_docker_exec info
+  debug: var=check_docker_exec verbosity={{ debug_level }}
+
+- name: Check the After of docker service
+  command: grep -Fxq "After=network.target flanneld.service" /usr/lib/systemd/system/docker.service
+  become: true
+  register: check_docker_after
+  check_mode: no
+  ignore_errors: yes
+  changed_when: no
+
+- name: Show check_docker_after info
+  debug: var=check_docker_after verbosity={{ debug_level }}
+
+- name: Check the Requires of docker service
+  command: grep -Fxq "Requires=flanneld.service" /usr/lib/systemd/system/docker.service
+  become: true
+  register: check_docker_requires
+  check_mode: no
+  ignore_errors: yes
+  changed_when: no
+
+- name: Show check_docker_requires info
+  debug: var=check_docker_requires verbosity={{ debug_level }}

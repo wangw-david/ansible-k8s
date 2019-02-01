@@ -1,0 +1,31 @@
+---
+- name: Copying over kube-scheduler for services
+  template:
+    src: "kube-scheduler.service.j2"
+    dest: "/usr/lib/systemd/system/kube-scheduler.service"
+    mode: "0644"
+  become: true
+  register: copy_scheduler_system
+
+- name: Copying over kube-scheduler.conf for services
+  template:
+    src: "kube-scheduler.conf.j2"
+    dest: "{{ kube_apiserver_config_path }}/kube-scheduler.conf"
+    mode: "0644"
+  become: true
+  register: copy_scheduler_config
+
+- include_tasks: set_scheduler.yml
+
+- name: Restart kube-scheduler service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+    name: kube-scheduler
+  become: true
+  when:
+    - (copy_scheduler_system.changed | bool) or
+      (copy_scheduler_config.changed | bool) or
+      (copy_scheduler_kubeconfig.changed | bool) or
+      (check_scheduler_process.stdout == "0")

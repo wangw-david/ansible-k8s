@@ -1,0 +1,36 @@
+---
+- name: Check kubectl download file
+  stat:
+    path: "{{ kubectl_deploy_path }}/{{ k8s_client_zip_name }}"
+  register: check_k8s_client_download
+  become: true
+  delegate_to: localhost
+  run_once: true
+
+- name: Show check_k8s_client_download info
+  debug: var=check_k8s_client_download verbosity={{ debug_level }}
+  run_once: true
+
+- name: Check the k8s client unzipped folder
+  stat:
+    path: "{{ kubectl_deploy_path }}/kubernetes"
+  register: check_k8s_client_unzip
+  delegate_to: localhost
+  run_once: true
+
+- name: Show check_k8s_client_unzip info
+  debug: var=check_k8s_client_unzip verbosity={{ debug_level }}
+  run_once: true
+
+- name: Check kubectl binary file
+  stat:
+    path: "{{ kubectl_bin_path }}/{{ item.binary_name }}"
+  register: check_kubectl_binary
+  become: true
+  with_items: "{{ kubectl_services }}"
+
+- name: Show check_kubectl_binary info
+  debug: msg="The systemd file {{ item.0 }} exists stat is {{ item.1 }}" verbosity={{ debug_level }}
+  with_together:
+    - "{{ kubectl_services | map(attribute='binary_name') | list }}"
+    - "{{ check_kubectl_binary.results | map(attribute='stat.exists') | list }}"

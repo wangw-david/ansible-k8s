@@ -1,0 +1,50 @@
+---
+- name: Stop kube-apiserver service
+  systemd:
+    state: stopped
+    daemon_reload: yes
+    enabled: no
+    name: kube-apiserver
+  become: true
+  ignore_errors: yes
+
+- name: Stop kube-controller-manager service
+  systemd:
+    state: stopped
+    daemon_reload: yes
+    enabled: no
+    name: kube-controller-manager
+  become: true
+  ignore_errors: yes
+
+- name: Stop kube-scheduler service
+  systemd:
+    state: stopped
+    daemon_reload: yes
+    enabled: no
+    name: kube-scheduler
+  become: true
+  ignore_errors: yes
+
+- name: Remove the kube-server systemd file
+  file:
+    dest: "/usr/lib/systemd/system/{{ item }}"
+    state: absent
+  become: true
+  with_items:
+    - "kube-apiserver.service"
+    - "kube-controller-manager.service"
+    - "kube-scheduler.service"
+
+- name: Remove the kube-server binary file
+  file:
+    dest: "{{ kube_apiserver_bin_path }}/{{ item.binary_name }}"
+    state: absent
+  become: true
+  with_items: "{{ kube_server_services }}"
+
+- name: Remove the kube-server config file
+  file:
+    dest: "{{ kube_apiserver_config_path }}"
+    state: absent
+  become: true

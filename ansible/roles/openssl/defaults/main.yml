@@ -1,0 +1,61 @@
+---
+####################
+# deploy
+####################
+
+####################
+# certificate
+####################
+kube_certificates:
+  - name: "ca"
+    is_issuer: "True"
+    issuer_name: ""
+    days: "3650"
+  - name: "apiserver"
+    is_issuer: "False"
+    issuer_name: "ca"
+    days: "365"
+  - name: "apiserver-kubelet-client"
+    is_issuer: "False"
+    issuer_name: "ca"
+    days: "365"
+  - name: "kube-admin"
+    is_issuer: "False"
+    issuer_name: "ca"
+    days: "365"
+  - name: "apiserver-kube-proxy-client"
+    is_issuer: "False"
+    issuer_name: "ca"
+    days: "365"
+
+front_proxy_certificates:
+  - name: "front-proxy-ca"
+    is_issuer: "True"
+    issuer_name: ""
+    days: "3650"
+  - name: "front-proxy-client"
+    is_issuer: "False"
+    issuer_name: "front-proxy-ca"
+    days: "365"
+
+etcd_certificates:
+  - name: "etcd-ca"
+    is_issuer: "True"
+    issuer_name: ""
+    days: "3650"
+  - name: "etcd-server"
+    is_issuer: "False"
+    issuer_name: "etcd-ca"
+    days: "365"
+  - name: "etcd-peer"
+    is_issuer: "False"
+    issuer_name: "etcd-ca"
+    days: "365"
+  - name: "kube-etcd-healthcheck-client"
+    is_issuer: "False"
+    issuer_name: "etcd-ca"
+    days: "365"
+  - name: "kube-apiserver-etcd-client"
+    is_issuer: "False"
+    issuer_name: "etcd-ca"
+    days: "365"

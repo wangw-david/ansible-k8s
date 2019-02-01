@@ -1,0 +1,29 @@
+---
+####################
+# deploy
+####################
+kubelet_deploy_path: "{{ k8s_server_download_path }}"
+
+####################
+# config
+####################
+kubelet_bin_path: "/usr/bin"
+kubelet_config_path: "{{ k8s_config_directory }}/kubelet"
+kubelet_cert_config_path: "{{ kubelet_config_path }}/pki"
+kubelet_work_path: "/var/lib/kubelet"
+kubelet_log_path: "{{ k8s_log_path }}/kubelet"
+
+kubelet_services:
+  - binary_name: "kubelet"
+  - binary_name: "kube-proxy"
+
+kubelet_args:
+  - "--bootstrap-kubeconfig={{ kubelet_config_path }}/bootstrap-kubelet.kubeconfig"
+  - "--config={{ kubelet_config_path }}/kubelet-config.yaml"
+  - "--network-plugin=cni"
+  - "--feature-gates=BlockVolume=true,CSIBlockVolume=true,CSIPersistentVolume=true,MountPropagation=true,VolumeSnapshotDataSource=true,KubeletPluginsWatcher=true,CSINodeInfo=true,CSIDriverRegistry=true"
+  - "--log-dir={{ kubelet_log_path }}"
+
+kube_proxy_args:
+  - "--config={{ kubelet_config_path }}/kube-proxy-config.yaml"
+  - "--hostname-override={{ api_interface_address }}"

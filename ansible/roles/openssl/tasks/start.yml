@@ -1,0 +1,60 @@
+---
+- include_tasks: generate_auth.yml
+  vars:
+    ca_name: "{{ item.name }}"
+    is_issuer: "{{ item.is_issuer }}"
+    ca_days: "{{ item.days }}"
+    ca_issuer_name: "{{ item.issuer_name }}"
+  with_items: "{{ kube_certificates }}"
+
+- include_tasks: generate_auth.yml
+  vars:
+    ca_name: "{{ item.name }}"
+    is_issuer: "{{ item.is_issuer }}"
+    ca_days: "{{ item.days }}"
+    ca_issuer_name: "{{ item.issuer_name }}"
+  with_items: "{{ front_proxy_certificates }}"
+
+- include_tasks: generate_auth.yml
+  vars:
+    ca_name: "{{ item.name }}"
+    is_issuer: "{{ item.is_issuer }}"
+    ca_days: "{{ item.days }}"
+    ca_issuer_name: "{{ item.issuer_name }}"
+  with_items: "{{ etcd_certificates }}"
+
+- name: Check sa.key file
+  stat:
+    path: "{{ deploy_k8s_cert_path }}/sa.key"
+  register: check_sa_key
+  become: true
+
+- name: Run the command that generated the sa.key
+  shell: "openssl genrsa -out {{ deploy_k8s_cert_path }}/sa.key 2048"
+  become: true
+  run_once: true
+  when: not check_sa_key.stat.exists
+
+- name: Check sa.pub file
+  stat:
+    path: "{{ deploy_k8s_cert_path }}/sa.pub"
+  register: check_sa_pub
+  become: true
+
+- name: Run the command that generated the sa.key
+  shell: "openssl rsa -in {{ deploy_k8s_cert_path }}/sa.key
+    -out {{ deploy_k8s_cert_path }}/sa.pub"
+  become: true
+  run_once: true
+  when: not check_sa_pub.stat.exists
+
+- name: Change the sa.key and sa.pub owner and group
+  file:
+    path: "{{ deploy_k8s_cert_path }}/sa.{{ item }}"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    mode: 0664
+  become: true
+  with_items:
+    - "key"
+    - "pub"

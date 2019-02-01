@@ -1,0 +1,39 @@
+# You can customize the base group here.
+# These hostname must be resolvable from your deployment host
+# You can add the following parameters for each node
+# ansible_user=root api_interface=eth0
+[nodes]
+node01 api_interface=eth0
+node02 api_interface=eth0
+node03 api_interface=eth0
+
+[server]
+# This node is used to run the apiserver
+node01 api_interface=eth0
+
+[deploy]
+# The deploy node represents the node where you run ansible and cannot be modified.
+localhost ansible_connection=local api_interface=eth0
+
+# The following is the group where each project is located
+[openssl:children]
+# Certificate generation node, in the deploy node, cannot be changed
+deploy
+
+[etcd:children]
+nodes
+
+[kubectl:children]
+# It need to execute the kubectl command through the deployment node,
+# so kubectl must include the deploy
+deploy
+nodes
+
+[kubeserver:children]
+server
+
+[flannel:children]
+nodes
+
+[kubelet:children]
+nodes

@@ -1,0 +1,55 @@
+---
+- name: Ensuring kube deploy directories exist in deploy node
+  file:
+    path: "{{ kube_apiserver_deploy_path }}"
+    state: "directory"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    mode: "0770"
+  become: true
+  run_once: true
+  delegate_to: localhost
+
+- name: Ensuring kubeserver config directories exist
+  file:
+    path: "{{ kube_apiserver_config_path }}"
+    state: "directory"
+    mode: "0770"
+  become: true
+
+- name: Ensuring kubeserver auth config directories exist
+  file:
+    path: "{{ kube_apiserver_cert_path }}"
+    state: "directory"
+    mode: "0770"
+  become: true
+
+- name: Ensuring log directories exist
+  file:
+    path: "{{ kube_apiserver_log_path }}"
+    state: "directory"
+    mode: "0770"
+  become: true
+
+- name: Distribute certificates to kubeserver nodes
+  copy:
+    src: "{{ deploy_k8s_cert_path }}/{{ item }}"
+    dest: "{{ kube_apiserver_cert_path }}/{{ item }}"
+  become: true
+  with_items:
+    - "ca.crt"
+    - "ca.key"
+    - "apiserver.crt"
+    - "apiserver.key"
+    - "apiserver-kubelet-client.crt"
+    - "apiserver-kubelet-client.key"
+    - "front-proxy-ca.crt"
+    - "front-proxy-ca.key"
+    - "front-proxy-client.crt"
+    - "front-proxy-client.key"
+    - "etcd-ca.crt"
+    - "etcd-ca.key"
+    - "kube-apiserver-etcd-client.crt"
+    - "kube-apiserver-etcd-client.key"
+    - "sa.pub"
+    - "sa.key"

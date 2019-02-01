@@ -1,0 +1,16 @@
+---
+- include_tasks: install_systemd.yml
+
+- include_tasks: set_docker.yml
+
+- include_tasks: check_kubeconfig.yml
+
+- include_tasks: set_kubelet.yml
+
+- include_tasks: set_kubeproxy.yml
+
+- include_tasks: check_process.yml
+
+- include_tasks: start_kubelet.yml
+
+- include_tasks: start_kube_proxy.yml

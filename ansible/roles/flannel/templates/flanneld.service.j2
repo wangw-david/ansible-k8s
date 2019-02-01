@@ -1,0 +1,21 @@
+[Unit]
+Description=Flanneld overlay address etcd agent
+After=network.target
+Before=docker.service
+
+[Service]
+EnvironmentFile=-{{ flannel_config_path }}/flanneld
+ExecStart=/usr/bin/flanneld-start --ip-masq \
+        "${FLANNEL_ETCD}" \
+        "${FLANNEL_ETCD_KEY}" \
+        "${FLANNEL_ETCD_CAFILE}" \
+        "${FLANNEL_ETCD_CERTFILE}" \
+        "${FLANNEL_ETCD_KEYFILE}"
+ExecStartPost=/usr/libexec/flannel/mk-docker-opts.sh -d /run/flannel/docker
+Restart=on-failure
+Type=notify
+
+[Install]
+WantedBy=multi-user.target
+RequiredBy=docker.service
+

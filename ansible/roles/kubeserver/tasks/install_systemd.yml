@@ -1,0 +1,48 @@
+---
+- include_tasks: check_systemd.yml
+
+- name: Download the kubernetes server zip file
+  get_url:
+    url: "{{ k8s_server_download_url }}"
+    dest: "{{ kube_apiserver_deploy_path }}"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+  become: true
+  delegate_to: localhost
+  run_once: true
+  when: not check_k8s_server_download.stat.exists | bool
+
+- name: Unarchive the kubernetes zip file
+  unarchive:
+    src: "{{ kube_apiserver_deploy_path }}/{{ k8s_server_zip_name }}"
+    dest: "{{ kube_apiserver_deploy_path }}"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    remote_src: yes
+  become: true
+  delegate_to: localhost
+  run_once: true
+  when: not check_k8s_server_unzip.stat.exists | bool
+
+- name: Unarchive the kubernetes-src zip file
+  unarchive:
+    src: "{{ kube_apiserver_deploy_path }}/kubernetes/kubernetes-src.tar.gz"
+    dest: "{{ kube_apiserver_deploy_path }}/kubernetes/"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    remote_src: yes
+  become: true
+  delegate_to: localhost
+  run_once: true
+  when: not check_server_src_unzip.stat.exists | bool
+
+- name: Copy the kubeserver binary to system
+  copy:
+    src: "{{ kube_apiserver_deploy_path }}/kubernetes/server/bin/{{ item.0.binary_name }}"
+    dest: "{{ kube_apiserver_bin_path }}/{{ item.0.binary_name }}"
+    mode: 0755
+  become: true
+  with_together:
+    - "{{ kube_server_services }}"
+    - "{{ check_kubeserver_binary.results | map(attribute='stat.exists') | list }}"
+  when: not item.1 | bool

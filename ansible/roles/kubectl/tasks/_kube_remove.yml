@@ -1,0 +1,18 @@
+---
+- name: Remove the kubectl binary from system
+  file:
+    dest: "{{ kubectl_bin_path }}/{{ item.binary_name }}"
+    state: absent
+  become: true
+  with_items: "{{ kubectl_services }}"
+
+- name: Remove the config path of kubectl
+  file:
+    dest: "{{ kubectl_config_path }}"
+    state: absent
+  become: true
+
+- name: Remove the config path of home
+  file:
+    dest: "{{ lookup('env','HOME') }}/.kube"
+    state: absent

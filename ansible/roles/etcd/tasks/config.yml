@@ -1,0 +1,27 @@
+---
+- name: Ensuring etcd config path exist
+  file:
+    path: "{{ etcd_config_path }}"
+    state: "directory"
+    mode: "0770"
+  become: true
+
+- name: Ensuring etcd work path exist
+  file:
+    path: "{{ etcd_work_path }}"
+    state: "directory"
+    mode: "0755"
+  become: true
+
+- name: Distribute certificates to etcd nodes
+  copy:
+    src: "{{ deploy_k8s_cert_path }}/{{ item }}"
+    dest: "{{ etcd_config_path }}/{{ item }}"
+  become: true
+  with_items:
+    - "etcd-ca.crt"
+    - "etcd-ca.key"
+    - "etcd-server.crt"
+    - "etcd-server.key"
+    - "etcd-peer.crt"
+    - "etcd-peer.key"

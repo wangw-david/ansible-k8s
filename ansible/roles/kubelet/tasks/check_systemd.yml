@@ -1,0 +1,47 @@
+---
+- name: Check kubelet download file
+  stat:
+    path: "{{ kubelet_deploy_path }}/{{ k8s_server_zip_name }}"
+  register: check_kubelet_download
+  become: true
+  delegate_to: localhost
+  run_once: true
+
+- name: Show check_kubelet_download info
+  debug: var=check_kubelet_download verbosity={{ debug_level }}
+  run_once: true
+
+- name: Check the kubelet unzipped folder
+  stat:
+    path: "{{ kubelet_deploy_path }}/kubernetes"
+  register: check_kubelet_unzip
+  delegate_to: localhost
+  run_once: true
+
+- name: Show check_kubelet_unzip info
+  debug: var=check_kubelet_unzip verbosity={{ debug_level }}
+  run_once: true
+
+- name: Check the kubernetes-src unzipped folder
+  stat:
+    path: "{{ kubelet_deploy_path }}/kubernetes/server"
+  register: check_kubelet_src_unzip
+  delegate_to: localhost
+  run_once: true
+
+- name: Show check_kubelet_src_unzip info
+  debug: var=check_kubelet_src_unzip verbosity={{ debug_level }}
+  run_once: true
+
+- name: Check kubelet binary file
+  stat:
+    path: "{{ kubelet_bin_path }}/{{ item.binary_name }}"
+  register: check_kubelet_binary
+  become: true
+  with_items: "{{ kubelet_services }}"
+
+- name: Show check_kubelet_binary info
+  debug: msg="The systemd file {{ item.0 }} exists stat is {{ item.1 }}" verbosity={{ debug_level }}
+  with_together:
+    - "{{ kubelet_services | map(attribute='binary_name') | list }}"
+    - "{{ check_kubelet_binary.results | map(attribute='stat.exists') | list }}"

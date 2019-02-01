@@ -1,0 +1,53 @@
+---
+- name: Ensuring kubelet deploy directories exist in deploy node
+  file:
+    path: "{{ kubelet_deploy_path }}"
+    state: "directory"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    mode: "0770"
+  become: true
+  run_once: true
+  delegate_to: localhost
+
+- name: Ensuring kubelet config directories exist
+  file:
+    path: "{{ kubelet_config_path }}"
+    state: "directory"
+    mode: "0770"
+  become: true
+
+- name: Ensuring kubelet cert config directories exist
+  file:
+    path: "{{ kubelet_cert_config_path }}"
+    state: "directory"
+    mode: "0770"
+  become: true
+
+- name: Ensuring kubelet log directories exist
+  file:
+    path: "{{ kubelet_log_path }}"
+    state: "directory"
+    mode: "0770"
+  become: true
+
+- name: Ensuring kubelet work directories exist
+  file:
+    path: "{{ kubelet_work_path }}"
+    state: "directory"
+    mode: "0755"
+  become: true
+
+- name: Distribute certificates to kubelet nodes
+  copy:
+    src: "{{ deploy_k8s_cert_path }}/{{ item }}"
+    dest: "{{ kubelet_cert_config_path }}/{{ item }}"
+  become: true
+  register: copy_certs
+  with_items:
+    - "ca.crt"
+    - "ca.key"
+    - "apiserver-kubelet-client.crt"
+    - "apiserver-kubelet-client.key"
+    - "apiserver-kube-proxy-client.crt"
+    - "apiserver-kube-proxy-client.key"

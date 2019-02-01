@@ -1,0 +1,17 @@
+# --logtostderr=true: log to standard error instead of files
+KUBE_LOGTOSTDERR="--logtostderr=false"
+
+#  --v=0: log level for V logs
+KUBE_LOG_LEVEL="--v=4"
+
+# --hostname-override="": If non-empty, will use this string as identification instead of the actual hostname.
+NODE_HOSTNAME="--hostname-override={{ api_interface_address }}"
+
+# Path to a kubeconfig file, specifying how to connect to the API server.
+KUBELET_KUBECONFIG="--kubeconfig={{ kubelet_config_path }}/kubelet.kubeconfig"
+
+# --allow-privileged=false: If true, allow containers to request privileged mode. [default=false]
+KUBE_ALLOW_PRIV="--allow-privileged=true"
+
+# Add your own!
+KUBELET_ARGS="{% for arg in kubelet_args %}{{ arg }}{% if not loop.last %} {% endif %}{% endfor %}"

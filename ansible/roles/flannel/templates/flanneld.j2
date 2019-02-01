@@ -1,0 +1,5 @@
+FLANNEL_ETCD="-etcd-endpoints={{ etcd_cluster_url }}"
+FLANNEL_ETCD_KEY="-etcd-prefix={{ flannel_etcd_network_prefix }}"
+FLANNEL_ETCD_CAFILE="--etcd-cafile={{ flannel_config_path }}/etcd-ca.crt"
+FLANNEL_ETCD_CERTFILE="--etcd-certfile={{ flannel_config_path }}/etcd-server.crt"
+FLANNEL_ETCD_KEYFILE="--etcd-keyfile={{ flannel_config_path }}/etcd-server.key"

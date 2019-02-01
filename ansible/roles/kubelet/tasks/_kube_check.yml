@@ -1,0 +1,8 @@
+---
+- include_tasks: check_kubeconfig.yml
+
+- include_tasks: check_docker.yml
+
+- include_tasks: check_process.yml
+
+- include_tasks: check_systemd.yml

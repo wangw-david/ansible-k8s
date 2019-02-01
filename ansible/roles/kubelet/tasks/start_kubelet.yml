@@ -1,0 +1,50 @@
+---
+- name: Run the command that swapoff -a
+  shell: "swapoff -a"
+  become: true
+  changed: false
+
+- name: Copying over systemd for kubelet
+  template:
+    src: "kubelet.service.j2"
+    dest: "/usr/lib/systemd/system/kubelet.service"
+    mode: "0644"
+  become: true
+  register: copy_kubelet_system
+
+- name: Copying over kubelet config for kubelet
+  template:
+    src: "kubelet.conf.j2"
+    dest: "{{ kubelet_config_path }}/kubelet.conf"
+    mode: "0644"
+  become: true
+  register: copy_kubelet_config
+
+- name: Copying over kubelet config.yaml for kubelet
+  template:
+    src: "kubelet-config.yaml.j2"
+    dest: "{{ kubelet_config_path }}/kubelet-config.yaml"
+    mode: "0644"
+  become: true
+  register: copy_kubelet_yaml
+
+- name: Restart kubelet service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+    name: kubelet
+  become: true
+  when:
+    - (copy_kubelet_system.changed | bool) or
+      (copy_kubelet_config.changed | bool) or
+      (copy_kubelet_yaml.changed | bool) or
+      (check_kubelet_process.stdout == "0")
+
+- name: Get the kubelet nodes
+  command:  kubectl get nodes
+  register: nodes
+  run_once: true
+  delegate_to: localhost
+
+- debug: var=nodes.stdout_lines

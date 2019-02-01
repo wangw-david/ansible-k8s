@@ -1,0 +1,36 @@
+---
+- include_tasks: check_systemd.yml
+
+- name: Download the kubernetes client zip file
+  get_url:
+    url: "{{ k8s_client_download_url }}"
+    dest: "{{ kubectl_deploy_path }}"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+  become: true
+  delegate_to: localhost
+  run_once: true
+  when: not check_k8s_client_download.stat.exists | bool
+
+- name: Unarchive the kubernetes zip file
+  unarchive:
+    src: "{{ kubectl_deploy_path }}/{{ k8s_client_zip_name }}"
+    dest: "{{ kubectl_deploy_path }}"
+    owner: "{{ config_owner_user }}"
+    group: "{{ config_owner_group }}"
+    remote_src: yes
+  become: true
+  delegate_to: localhost
+  run_once: true
+  when: not check_k8s_client_unzip.stat.exists | bool
+
+- name: Copy the kubectl binary to system
+  copy:
+    src: "{{ kubectl_deploy_path }}/kubernetes/client/bin/{{ item.0.binary_name }}"
+    dest: "{{ kubectl_bin_path }}/{{ item.0.binary_name }}"
+    mode: 0755
+  become: true
+  with_together:
+    - "{{ kubectl_services }}"
+    - "{{ check_kubectl_binary.results | map(attribute='stat.exists') | list }}"
+  when: not item.1 | bool

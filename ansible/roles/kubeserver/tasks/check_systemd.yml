@@ -1,0 +1,47 @@
+---
+- name: Check kubeserver download file
+  stat:
+    path: "{{ kube_apiserver_deploy_path }}/{{ k8s_server_zip_name }}"
+  register: check_k8s_server_download
+  become: true
+  delegate_to: localhost
+  run_once: true
+
+- name: Show check_k8s_server_download info
+  debug: var=check_k8s_server_download verbosity={{ debug_level }}
+  run_once: true
+
+- name: Check the kube server unzipped folder
+  stat:
+    path: "{{ kube_apiserver_deploy_path }}/kubernetes"
+  register: check_k8s_server_unzip
+  delegate_to: localhost
+  run_once: true
+
+- name: Show check_k8s_server_unzip info
+  debug: var=check_k8s_server_unzip verbosity={{ debug_level }}
+  run_once: true
+
+- name: Check the kubernetes-src unzipped folder
+  stat:
+    path: "{{ kube_apiserver_deploy_path }}/kubernetes/server"
+  register: check_server_src_unzip
+  delegate_to: localhost
+  run_once: true
+
+- name: Show check_server_src_unzip info
+  debug: var=check_server_src_unzip verbosity={{ debug_level }}
+  run_once: true
+
+- name: Check kubeserver binary file
+  stat:
+    path: "{{ kube_apiserver_bin_path }}/{{ item.binary_name }}"
+  register: check_kubeserver_binary
+  become: true
+  with_items: "{{ kube_server_services }}"
+
+- name: Show check_kubeserver_binary info
+  debug: msg="The systemd file {{ item.0 }} exists stat is {{ item.1 }}" verbosity={{ debug_level }}
+  with_together:
+    - "{{ kube_server_services | map(attribute='binary_name') | list }}"
+    - "{{ check_kubeserver_binary.results | map(attribute='stat.exists') | list }}"

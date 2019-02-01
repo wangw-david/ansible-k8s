@@ -1,0 +1,28 @@
+---
+- name: Copying over kube-apiserver.service for services
+  template:
+    src: "kube-apiserver.service.j2"
+    dest: "/usr/lib/systemd/system/kube-apiserver.service"
+    mode: "0644"
+  become: true
+  register: copy_apiserver_system
+
+- name: Copying over kube-apiserver.conf for services
+  template:
+    src: "kube-apiserver.conf.j2"
+    dest: "{{ kube_apiserver_config_path }}/kube-apiserver.conf"
+    mode: "0644"
+  become: true
+  register: copy_apiserver_config
+
+- name: Restart kube-apiserver service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+    name: kube-apiserver
+  become: true
+  when:
+    - (copy_apiserver_system.changed | bool) or
+      (copy_apiserver_config.changed | bool) or
+      (check_api_process.stdout == "0")
