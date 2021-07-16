@@ -23,6 +23,7 @@ kubelet_args:
   - "--network-plugin=cni"
   - "--feature-gates=BlockVolume=true,CSIBlockVolume=true,CSIPersistentVolume=true,MountPropagation=true,VolumeSnapshotDataSource=true,KubeletPluginsWatcher=true,CSINodeInfo=true,CSIDriverRegistry=true"
   - "--log-dir={{ kubelet_log_path }}"
+  - "--log-file={{ kubelet_log_path }}/kubelet.log"
 
 kube_proxy_args:
   - "--config={{ kubelet_config_path }}/kube-proxy-config.yaml"

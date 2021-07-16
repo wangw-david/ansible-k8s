@@ -52,34 +52,22 @@
   become: true
 
 - name: Remove the docker configuration EnvironmentFile
-  lineinfile:
-    path: /usr/lib/systemd/system/docker.service
-    state: absent
-    regexp: 'EnvironmentFile=-/run/flannel/docker'
+  shell: sed -i '/^EnvironmentFile=.*/d' /usr/lib/systemd/system/docker.service
   become: true
   register: remove_docker_env
 
 - name: Remove the docker configuration ExecStart
-  lineinfile:
-    path: /usr/lib/systemd/system/docker.service
-    regexp: '^ExecStart=\/usr\/bin\/dockerd \$DOCKER_OPTS'
-    line: 'ExecStart=/usr/bin/dockerd'
+  shell: sed -i 's/^ExecStart=.*/ExecStart=\/usr\/bin\/dockerd/' /usr/lib/systemd/system/docker.service
   become: true
   register: remove_docker_exec
 
 - name: Remove the docker configuration After
-  lineinfile:
-    path: /usr/lib/systemd/system/docker.service
-    state: absent
-    regexp: 'After=network.target flanneld.service'
+  shell: sed -i 's/^After=.*/After=network-online.target firewalld.service containerd.service/' /usr/lib/systemd/system/docker.service
   become: true
   register: remove_docker_after
 
 - name: Remove the docker configuration Requires
-  lineinfile:
-    path: /usr/lib/systemd/system/docker.service
-    state: absent
-    regexp: 'Requires=flanneld.service'
+  shell: sed -i 's/^Requires=.*/Requires=docker.socket/' /usr/lib/systemd/system/docker.service
   become: true
   register: remove_docker_requires
 

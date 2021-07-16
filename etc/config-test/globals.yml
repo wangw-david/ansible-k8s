@@ -50,8 +50,8 @@ flannel_network_iprange: "172.30.0.0/16"
 # etcd options
 ###################
 etcd_config_path: "/etc/etcd"
-etcd_cluster_url: "{% for host in groups['etcd'] -%}https://{{ hostvars[host]['ansible_' + api_interface]['ipv4']['address'] }}:2379{% if not loop.last %},{% endif %}{%- endfor %}"
-etcd_init_cluster_url: "{% for host in groups['etcd'] -%}infra{{ loop.index }}=https://{{ hostvars[host]['ansible_' + api_interface]['ipv4']['address'] }}:2380{% if not loop.last %},{% endif %}{%- endfor %}"
+etcd_cluster_url: "{% for host in groups['etcd'] -%}https://{{ hostvars[host]['ansible_' + hostvars[host].api_interface]['ipv4']['address'] }}:2379{% if not loop.last %},{% endif %}{%- endfor %}"
+etcd_init_cluster_url: "{% for host in groups['etcd'] -%}infra{{ loop.index }}=https://{{ hostvars[host]['ansible_' + hostvars[host].api_interface]['ipv4']['address'] }}:2380{% if not loop.last %},{% endif %}{%- endfor %}"
 
 ###################
 # enable options

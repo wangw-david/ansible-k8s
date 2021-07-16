@@ -19,5 +19,5 @@ subjectAltName=@alt_names
 [ alt_names ]
 DNS.1 = localhost
 {% for host in groups['etcd'] %}
-IP.{{ loop.index }}={{ hostvars[host]['ansible_' + api_interface]['ipv4']['address'] }}
+IP.{{ loop.index }}={{ hostvars[host]['ansible_' + hostvars[host].api_interface]['ipv4']['address'] }}
 {% endfor %}

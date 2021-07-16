@@ -2,38 +2,25 @@
 - include_tasks: check_docker.yml
 
 - name: Modify the docker configuration EnvironmentFile
-  lineinfile:
-    path: /usr/lib/systemd/system/docker.service
-    insertafter: '^\[Service\].*'
-    line: 'EnvironmentFile=-/run/flannel/docker'
+  shell: sed -i '/^\[Service\]/a EnvironmentFile=-\/run\/flannel\/docker/' /usr/lib/systemd/system/docker.service
   become: true
   register: set_docker_env
   when: check_docker_env.rc != 0
 
 - name: Modify the docker configuration ExecStart
-  lineinfile:
-    path: /usr/lib/systemd/system/docker.service
-    regexp: '^ExecStart=.*'
-    line: 'ExecStart=/usr/bin/dockerd $DOCKER_OPTS'
+  shell: sed -i 's/^ExecStart=.*/ExecStart=\/usr\/bin\/dockerd $DOCKER_OPTS/' /usr/lib/systemd/system/docker.service
   become: true
   register: set_docker_exec
   when: check_docker_exec.rc != 0
 
 - name: Modify the docker configuration After
-  lineinfile:
-    path: /usr/lib/systemd/system/docker.service
-    regexp: '^After=.*'
-    line: 'After=network.target flanneld.service'
+  shell: sed -i 's/^After=.*/After=network-online.target firewalld.service containerd.service flanneld.service/' /usr/lib/systemd/system/docker.service
   become: true
   register: set_docker_after
   when: check_docker_after.rc != 0
 
 - name: Modify the docker configuration Requires
-  lineinfile:
-    path: /usr/lib/systemd/system/docker.service
-    regexp: '^Requires=.*'
-    insertafter: '^After.*'
-    line: 'Requires=flanneld.service'
+  shell: sed -i 's/^Requires=.*/Requires=flanneld.service/' /usr/lib/systemd/system/docker.service
   become: true
   register: set_docker_requires
   when: check_docker_requires.rc != 0
